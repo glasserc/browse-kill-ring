@@ -288,6 +288,10 @@ yanked text from the *Kill Ring* buffer."
     (kill-new str)
     (browse-kill-ring-update)))
 
+(defun browse-kill-ring-quit-if-prefix-arg ()
+  "If prefix arg was given on this command, quit browse-kill-ring."
+  (when current-prefix-arg (browse-kill-ring-quit)))
+
 (defun browse-kill-ring-insert (&optional quit)
   "Insert the kill ring item at point into the last selected buffer.
 If optional argument QUIT is non-nil, close the *Kill Ring* buffer as
