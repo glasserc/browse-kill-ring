@@ -278,6 +278,16 @@ yanked text from the *Kill Ring* buffer."
   (with-current-buffer (window-buffer browse-kill-ring-original-window)
     (undo)))
 
+(defun browse-kill-ring-move-to-front ()
+  "Move the item at point to the front of the kill-ring."
+  (interactive)
+  (let* ((buf (current-buffer))
+         (pt (point))
+         (str (browse-kill-ring-current-string buf pt)))
+    (browse-kill-ring-delete)
+    (kill-new str)
+    (browse-kill-ring-update)))
+
 (defun browse-kill-ring-insert (&optional quit)
   "Insert the kill ring item at point into the last selected buffer.
 If optional argument QUIT is non-nil, close the *Kill Ring* buffer as
