@@ -292,6 +292,13 @@ yanked text from the *Kill Ring* buffer."
   "If prefix arg was given on this command, quit browse-kill-ring."
   (when current-prefix-arg (browse-kill-ring-quit)))
 
+(defmacro browse-kill-ring-progn (&rest args)
+  "Create a function that does some sequence of browse-kill-ring actions."
+  `(function
+    (lambda ()
+      (interactive)
+      ,@args)))
+
 (defun browse-kill-ring-insert (&optional quit)
   "Insert the kill ring item at point into the last selected buffer.
 If optional argument QUIT is non-nil, close the *Kill Ring* buffer as
