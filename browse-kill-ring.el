@@ -308,62 +308,15 @@ well."
                               (point)
                               quit))
 
-(defun browse-kill-ring-insert-new (insert-action post-action &optional quit)
-  "Insert the kill ring item at point into the last selected buffer.
-`insert-action' can be 'insert 'append 'prepend.
-`post-action' can be nil 'move 'delete.
-If optional argument QUIT is non-nil, close the *Kill Ring* buffer as
-well."
-  (interactive "P")
-  (let* ((buf (current-buffer))
-        (pt (point))
-        (str (browse-kill-ring-current-string buf pt)))
-    (case insert-action
-      ('insert (browse-kill-ring-do-insert buf pt nil))
-      ('append (browse-kill-ring-do-append-insert buf pt nil))
-      ('prepend (browse-kill-ring-do-prepend-insert buf pt nil))
-      (t (error "Unknown insert-action: %s" insert-action)))
-    (case post-action
-      ('move
-        (browse-kill-ring-delete)
-        (kill-new str))
-      ('delete (browse-kill-ring-delete))
-      (t (error "Unknown post-action: %s" post-action)))
-    (if quit
-      (browse-kill-ring-quit)
-      (browse-kill-ring-update))))
-
-(defun browse-kill-ring-insert-and-delete (&optional quit)
-  "Insert the kill ring item at point, and remove it from the kill ring.
-If optional argument QUIT is non-nil, close the *Kill Ring* buffer as
-well."
-  (interactive "P")
-  (browse-kill-ring-do-insert (current-buffer)
-                              (point)
-                              quit)
-  (browse-kill-ring-delete))
-
-(defun browse-kill-ring-insert-and-quit ()
-  "Like `browse-kill-ring-insert', but close the *Kill Ring* buffer afterwards."
-  (interactive)
-  (browse-kill-ring-insert t))
-
-(defun browse-kill-ring-insert-and-move (&optional quit)
-  "Like `browse-kill-ring-insert', but move the entry to the front."
-  (interactive "P")
-  (let ((buf (current-buffer))
-        (pt (point)))
-    (browse-kill-ring-do-insert buf pt quit)
-    (let ((str (browse-kill-ring-current-string buf pt)))
-      (browse-kill-ring-delete)
-      (kill-new str)))
-  (unless quit
-    (browse-kill-ring-update)))
-
 (defun browse-kill-ring-insert-move-and-quit ()
-  "Like `browse-kill-ring-insert-and-move', but close the *Kill Ring* buffer."
+  "A sequence of three actions, used in some keybindings.
+This function is equivalent to `browse-kill-ring-insert',
+followed by `browse-kill-ring-move-to-front', followed by
+`browse-kill-ring-quit'."
   (interactive)
-  (browse-kill-ring-insert-new 'insert 'move t))
+  (browse-kill-ring-insert)
+  (browse-kill-ring-move-to-front)
+  (browse-kill-ring-quit))
 
 (defun browse-kill-ring-prepend-insert (&optional quit)
   "Like `browse-kill-ring-insert', but it places the entry at the beginning
@@ -372,30 +325,6 @@ of the buffer as opposed to point.  Point is left unchanged after inserting."
   (browse-kill-ring-do-prepend-insert (current-buffer)
                                       (point)
                                       quit))
-
-(defun browse-kill-ring-prepend-insert-and-quit ()
-  "Like `browse-kill-ring-prepend-insert', but close the *Kill Ring* buffer."
-  (interactive)
-  (browse-kill-ring-prepend-insert t))
-
-(defun browse-kill-ring-prepend-insert-and-move (&optional quit)
-  "Like `browse-kill-ring-prepend-insert', but move the entry to the front
-of the *Kill Ring*."
-  (interactive "P")
-  (let ((buf (current-buffer))
-        (pt (point)))
-    (browse-kill-ring-do-prepend-insert buf pt quit)
-    (let ((str (browse-kill-ring-current-string buf pt)))
-      (browse-kill-ring-delete)
-      (kill-new str)))
-  (unless quit
-    (browse-kill-ring-update)))
-
-(defun browse-kill-ring-prepend-insert-move-and-quit ()
-  "Like `browse-kill-ring-prepend-insert-and-move', but close the
-*Kill Ring* buffer."
-  (interactive)
-  (browse-kill-ring-prepend-insert-and-move t))
 
 (defun browse-kill-ring-highlight-inserted (start end)
   (when browse-kill-ring-highlight-inserted-item
@@ -458,30 +387,6 @@ buffer as opposed to point.  Point is left unchanged after inserting."
   (browse-kill-ring-do-append-insert (current-buffer)
                                      (point)
                                      quit))
-
-(defun browse-kill-ring-append-insert-and-quit ()
-  "Like `browse-kill-ring-append-insert', but close the *Kill Ring* buffer."
-  (interactive)
-  (browse-kill-ring-append-insert t))
-
-(defun browse-kill-ring-append-insert-and-move (&optional quit)
-  "Like `browse-kill-ring-append-insert', but move the entry to the front
-of the *Kill Ring*."
-  (interactive "P")
-  (let ((buf (current-buffer))
-        (pt (point)))
-    (browse-kill-ring-do-append-insert buf pt quit)
-    (let ((str (browse-kill-ring-current-string buf pt)))
-      (browse-kill-ring-delete)
-      (kill-new str)))
-  (unless quit
-    (browse-kill-ring-update)))
-
-(defun browse-kill-ring-append-insert-move-and-quit ()
-  "Like `browse-kill-ring-append-insert-and-move', but close the
-*Kill Ring* buffer."
-  (interactive)
-  (browse-kill-ring-append-insert-and-move t))
 
 (defun browse-kill-ring-do-append-insert (buf pt quit)
   (let ((str (browse-kill-ring-current-string buf pt)))
@@ -712,11 +617,28 @@ You most likely do not want to call `browse-kill-ring-mode' directly; use
   (define-key browse-kill-ring-mode-map (kbd "u") 'browse-kill-ring-insert-move-and-quit)
   (define-key browse-kill-ring-mode-map (kbd "M-<return>") 'browse-kill-ring-insert-move-and-quit)
   (define-key browse-kill-ring-mode-map (kbd "i") 'browse-kill-ring-insert)
-  (define-key browse-kill-ring-mode-map (kbd "o") 'browse-kill-ring-insert-and-move)
-  (define-key browse-kill-ring-mode-map (kbd "x") 'browse-kill-ring-insert-and-delete)
-  (define-key browse-kill-ring-mode-map (kbd "RET") 'browse-kill-ring-insert-and-quit)
-  (define-key browse-kill-ring-mode-map (kbd "b") 'browse-kill-ring-prepend-insert)
-  (define-key browse-kill-ring-mode-map (kbd "a") 'browse-kill-ring-append-insert))
+  (define-key browse-kill-ring-mode-map (kbd "o")
+    (browse-kill-ring-progn
+     (browse-kill-ring-insert)
+     (browse-kill-ring-move-to-front)
+     (browse-kill-ring-quit-if-prefix-arg)))
+  (define-key browse-kill-ring-mode-map (kbd "x")
+    (browse-kill-ring-progn
+     (browse-kill-ring-insert)
+     (browse-kill-ring-delete)
+     (browse-kill-ring-quit-if-prefix-arg)))
+  (define-key browse-kill-ring-mode-map (kbd "RET")
+    (browse-kill-ring-progn
+     (browse-kill-ring-insert)
+     (browse-kill-ring-quit)))
+  (define-key browse-kill-ring-mode-map (kbd "b")
+    (browse-kill-ring-progn
+     (browse-kill-ring-prepend-insert)
+     (browse-kill-ring-quit-if-prefix-arg)))
+  (define-key browse-kill-ring-mode-map (kbd "a")
+    (browse-kill-ring-progn
+     (browse-kill-ring-append-insert)
+     (browse-kill-ring-quit-if-prefix-arg))))
 
 ;;;###autoload
 (defun browse-kill-ring-default-keybindings ()
